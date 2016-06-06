@@ -1,6 +1,7 @@
 module.exports = {
     Mode: require('./Mode'),
     FFA: require('./FFA'),
+    Peaceful: require('./Peace'),
     Teams: require('./Teams'),
     Experimental: require('./Experimental'),
     Tournament: require('./Tournament'),
@@ -9,7 +10,8 @@ module.exports = {
     Debug: require('./Debug'),
     Zombie: require('./Zombie'),
     TeamZ: require('./TeamZ.js'),
-    TeamX: require('./TeamX.js')
+    TeamX: require('./TeamX.js'),
+    Peace: require('./Peace.js')
 };
 
 var get = function(id) {
@@ -20,6 +22,9 @@ var get = function(id) {
             break;
         case 2: // Experimental
             mode = new module.exports.Experimental();
+            break;
+        case 5: // Peace
+            mode = new module.exports.Peaceful();
             break;
         case 10: // Tournament
             mode = new module.exports.Tournament();

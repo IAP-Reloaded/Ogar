@@ -151,18 +151,18 @@ Cell.prototype.visibleCheck = function(box, centerPos, cells) {
         isThere = (this.abs(this.position.x - centerPos.x) < lenX) && (this.abs(this.position.y - centerPos.y) < lenY);
     }
     if (isThere) {
-        // It is
+        if(this.getMode = 5) if (this.cellType == 0) return 1; // <= added
         // To save perfomance, check if any client's cell collides with this cell
         for (var i = 0; i < cells.length; i++) {
             var cell = cells[i];
             if (!cell) continue;
-            
+
             var xs = this.position.x - cell.position.x;
             var ys = this.position.y - cell.position.y;
             var sqDist = xs * xs + ys * ys;
-            
+
             var collideDist = cell.getSquareSize() + this.getSquareSize();
-            
+
             if (sqDist < collideDist) {
                 return 2;
             }// Colliding with one
