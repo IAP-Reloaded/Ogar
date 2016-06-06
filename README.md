@@ -44,10 +44,12 @@ Ogar has support for custom game modes. To switch between game modes, change the
 
 ID   | Name           | Description
 -----|----------------|--------------------------------
-0    | Free For All   |
+0    | Free For All   | You can eat smaller players and all food.
 1    | Teams          |
-2    | Experimental   | 6/13/15
-5    | Peace          | FFA but you can only eat food, WIP*
+2    | Experimental   | As of 6/13/15, FFA with mother cells
+5    | Peace          | You are not able to eat others, but you can eat ejects, viruses, mother cells, and food.
+6    | BlockadeSpit   | Will reimplement when I can find a way to fix the errors spamming console about this.
+7    | Teleports      | You can press T to teleport, WIP*
 10   | Tournament     |
 11   | Hunger Games   |
 12   | Zombie Mode    |
@@ -56,9 +58,11 @@ ID   | Name           | Description
 20   | Rainbow FFA    | Hint: Use with "setAcid(true)"
 21   | Food Decay     | Food dissapears after five seconds, NYI**
 22   | Maze           | FFA but you are in a maze, NYI**
+23   | Hidden         | Everyone else on the map is hidden, NYI**
+24   | Arrows         | Use arrow keys to move instead of mouse, NYI**
 
 WIP*: Work in Progress
-NYI**: Not Yet Implemented, please make these gamemode ideas a reality!
+NYI**: Not Yet Implemented, please make these gamemode ideas a reality and help us code!!
 
 ## Console Commands
 The current available console commands are listed here. Command names are not case sensitive, but player names are.
