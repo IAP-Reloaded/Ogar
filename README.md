@@ -42,17 +42,23 @@ Use "gameserver.ini" to modify Ogar's configurations field. Player bots are curr
 ## Custom Game modes
 Ogar has support for custom game modes. To switch between game modes, change the value of "serverGamemode" in the configurations file to the selected game mode id and restart the server. The current supported game modes are:
 
-Id   | Name
------|--------------
-0    | Free For All
-1    | Teams
-2    | Experimental (As of 6/13/15)
-10   | Tournament
-11   | Hunger Games
-12   | Zombie Mode
-13   | Team Z
-14   | Team X
-20   | Rainbow FFA - Hint: Use with "setAcid(true)"
+ID   | Name           | Description
+-----|----------------|--------------------------------
+0    | Free For All   |
+1    | Teams          |
+2    | Experimental   | 6/13/15
+5    | Peace          | FFA but you can only eat food, WIP*
+10   | Tournament     |
+11   | Hunger Games   |
+12   | Zombie Mode    |
+13   | Team Z         |
+14   | Team X         |
+20   | Rainbow FFA    | Hint: Use with "setAcid(true)"
+21   | Food Decay     | Food dissapears after five seconds, NYI**
+22   | Maze           | FFA but you are in a maze, NYI**
+
+WIP*: Work in Progress
+NYI**: Not Yet Implemented, please make these gamemode ideas a reality!
 
 ## Console Commands
 The current available console commands are listed here. Command names are not case sensitive, but player names are.
