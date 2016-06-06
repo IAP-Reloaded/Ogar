@@ -2,6 +2,7 @@ module.exports = {
     Mode: require('./Mode'),
     FFA: require('./FFA'),
     Peaceful: require('./Peace'),
+    Teleports: require('./Teleports'),
     Teams: require('./Teams'),
     Experimental: require('./Experimental'),
     Tournament: require('./Tournament'),
@@ -25,6 +26,9 @@ var get = function(id) {
             break;
         case 5: // Peace
             mode = new module.exports.Peaceful();
+            break;
+        case 7: // Teleports
+            mode = new module.exports.Teleports();
             break;
         case 10: // Tournament
             mode = new module.exports.Tournament();
