@@ -1,13 +1,18 @@
+var Vector = require('../modules/Vector');
+var Rectangle = require('../modules/Rectangle');
+
 function Cell(nodeId, owner, position, mass, gameServer) {
     this.nodeId = nodeId;
     this.owner = owner; // playerTracker that owns this cell
-    this.ticksLeft = 0; // Individual updates
+    this.updateTime = new Date(); // Individual updates
+
     this.color = {
         r: 0,
-        g: 255,
+        g: 0,
         b: 0
     };
-    this.position = position;
+    this.position;
+    if (position) this.position = new Vector(position.x, position.y);
     this.mass = mass; // Starting mass of the cell
     this.cellType = -1; // 0 = Player Cell, 1 = Food, 2 = Virus, 3 = Ejected Mass
     this.spiked = 0; // If 1, then this cell has spikes around it
@@ -15,10 +20,7 @@ function Cell(nodeId, owner, position, mass, gameServer) {
     this.killedBy; // Cell that ate this cell
     this.gameServer = gameServer;
 
-    this.moveEngineSpeed = 0;
-    this.moveDecay = 0.85;
-    this.angle = 0; // Angle of movement
-    this.collisionRestoreTicks = 0; // Ticks left before cell starts checking for collision with client's cells
+    this.moveEngine = new Vector();
 }
 
 module.exports = Cell;
@@ -43,10 +45,6 @@ Cell.prototype.getColor = function() {
     return this.color;
 };
 
-Cell.prototype.getType = function() {
-    return this.cellType;
-};
-
 Cell.prototype.getSize = function() {
     // Calculates radius based on cell mass
     return Math.ceil(Math.sqrt(100 * this.mass));
@@ -58,42 +56,7 @@ Cell.prototype.getSquareSize = function() {
 };
 
 Cell.prototype.addMass = function(n) {
-    // Check if the cell needs to autosplit before adding mass
-    if (this.mass > this.gameServer.config.playerMaxMass && this.owner.cells.length < this.gameServer.config.playerMaxCells) {
-        var splitMass = this.mass / 2;
-        var randomAngle = Math.random() * 6.28; // Get random angle
-        this.gameServer.createPlayerCell(this.owner, this, randomAngle, splitMass);
-    } else {
-        this.mass = Math.min(this.mass, this.gameServer.config.playerMaxMass);
-    }
     this.mass += n;
-};
-
-Cell.prototype.getSpeed = function() {
-    // Based on 50ms ticks. If updateMoveEngine interval changes, change 50 to new value
-    // (should possibly have a config value for this?)
-
-    // Old formulas:
-    // return 5 + (20 * (1 - (this.mass/(70+this.mass))));
-    // return this.gameServer.config.playerSpeed * Math.pow(this.mass, -0.22) * 50 / 40;
-    return this.gameServer.config.playerSpeed * Math.pow(this.mass, -Math.PI / (Math.PI * Math.PI) / 1.5);
-};
-
-Cell.prototype.setAngle = function(radians) {
-    this.angle = radians;
-};
-
-Cell.prototype.getAngle = function() {
-    return this.angle;
-};
-
-Cell.prototype.setMoveEngineData = function(speed, decay) {
-    this.moveEngineSpeed = speed;
-    this.moveDecay = isNaN(decay) ? 0.75 : decay;
-};
-
-Cell.prototype.getEatingRange = function() {
-    return 0; // 0 for ejected cells
 };
 
 Cell.prototype.getKiller = function() {
@@ -104,41 +67,23 @@ Cell.prototype.setKiller = function(cell) {
     this.killedBy = cell;
 };
 
-// Functions
-
-Cell.prototype.collisionCheck = function(bottomY, topY, rightX, leftX) {
-    // Collision checking
-    if (this.position.y > bottomY) {
-        return false;
-    }
-
-    if (this.position.y < topY) {
-        return false;
-    }
-
-    if (this.position.x > rightX) {
-        return false;
-    }
-
-    if (this.position.x < leftX) {
-        return false;
-    }
-
-    return true;
+Cell.prototype.getRange = function() {
+    var sz = this.getSize();
+    return new Rectangle(this.position.x, this.position.y, sz, sz);
 };
 
-// This collision checking function is based on CIRCLE shape
-Cell.prototype.collisionCheck2 = function(objectSquareSize, objectPosition) {
-    // IF (O1O2 + r <= R) THEN collided. (O1O2: distance b/w 2 centers of cells)
-    // (O1O2 + r)^2 <= R^2
-    // approximately, remove 2*O1O2*r because it requires sqrt(): O1O2^2 + r^2 <= R^2
+Cell.prototype.moveEngineTick = function(config) {
+    if (!this.gameServer) return;
+    var toMove = this.moveEngine.clone().scale(0.5);
+    this.position.sub(toMove);
 
-    var dx = this.position.x - objectPosition.x;
-    var dy = this.position.y - objectPosition.y;
+    // Decreasing twice as slower
+    this.moveEngine.scale(0.935);
 
-    return (dx * dx + dy * dy + this.getSquareSize() <= objectSquareSize);
-};
+    // Check for border passage
+    this.borderCheck(true);
 
+<<<<<<< HEAD
 Cell.prototype.visibleCheck = function(box, centerPos, cells) {
     // Checks if this cell is visible to the player
     var isThere = false;
@@ -170,71 +115,40 @@ Cell.prototype.visibleCheck = function(box, centerPos, cells) {
         return 1; // Not colliding with any
     }
     else return 0;
+=======
+    this.move();
+>>>>>>> OgarProject/master
 };
 
-Cell.prototype.calcMovePhys = function(config) {
-    // Move, twice as slower
-    var X = this.position.x + ((this.moveEngineSpeed / 2) * Math.sin(this.angle));
-    var Y = this.position.y + ((this.moveEngineSpeed / 2) * Math.cos(this.angle));
+Cell.prototype.borderCheck = function(flipMoving) {
+    if (flipMoving == undefined || flipMoving == null) flipMoving = false;
 
-    // Movement engine
-    var speedDecrease = this.moveEngineSpeed - this.moveEngineSpeed * this.moveDecay;
-    this.moveEngineSpeed -= speedDecrease / 2; // Decaying speed twice as slower
+    // Border check - If flipMoving is true then bounce off
+    var border = this.gameServer.borders();
+    var checkRadius = this.getSize() / 2;
 
-    // Ejected cell collision
-    if (this.cellType == 3) {
-        for (var i = 0; i < this.gameServer.nodesEjected.length; i++) {
-            var check = this.gameServer.nodesEjected[i];
-
-            if (check.nodeId == this.nodeId) continue; // Don't check for yourself
-
-            var dist = this.getDist(this.position.x, this.position.y, check.position.x, check.position.y);
-            var allowDist = this.getSize() + check.getSize(); // Allow cells to get in themselves a bit
-
-            if (dist < allowDist) {
-                // Two ejected cells collided
-                var deltaX = this.position.x - check.position.x;
-                var deltaY = this.position.y - check.position.y;
-                var angle = Math.atan2(deltaX, deltaY);
-
-                var move = allowDist - dist;
-
-                X += Math.sin(angle) * move / 2;
-                Y += Math.cos(angle) * move / 2;
-            }
-        }
+    if (this.position.x - checkRadius < border.left) {
+        if (flipMoving) this.moveEngine.flipY();
+        this.position.x = border.left + checkRadius;
     }
 
-    // Border check - Bouncy physics
-    var radius = 40;
-    if ((this.position.x - radius) < -config.borderLeft) {
-        // Flip angle horizontally - Left side
-        this.angle = 6.28 - this.angle;
-        X = -config.borderLeft + radius;
-    }
-    if ((this.position.x + radius) > config.borderRight) {
-        // Flip angle horizontally - Right side
-        this.angle = 6.28 - this.angle;
-        X = config.borderRight - radius;
-    }
-    if ((this.position.y - radius) < -config.borderTop) {
-        // Flip angle vertically - Top side
-        this.angle = (this.angle <= 3.14) ? 3.14 - this.angle : 9.42 - this.angle;
-        Y = -config.borderTop + radius;
-    }
-    if ((this.position.y + radius) > config.borderBottom) {
-        // Flip angle vertically - Bottom side
-        this.angle = (this.angle <= 3.14) ? 3.14 - this.angle : 9.42 - this.angle;
-        Y = config.borderBottom - radius;
+    if (this.position.x + checkRadius > border.right) {
+        if (flipMoving) this.moveEngine.flipX();
+        this.position.x = border.right - checkRadius;
     }
 
-    // Set position
-    this.position.x = X;
-    this.position.y = Y;
+    if (this.position.y - checkRadius < border.top) {
+        if (flipMoving) this.moveEngine.flipY();
+        this.position.y = border.top + checkRadius;
+    }
+
+    if (this.position.y + checkRadius > border.bottom) {
+        if (flipMoving) this.moveEngine.flipY();
+        this.position.y = border.bottom - checkRadius;
+    }
 };
 
 // Override these
-
 Cell.prototype.sendUpdate = function() {
     // Whether or not to include this cell in the update packet
     return true;
@@ -242,36 +156,21 @@ Cell.prototype.sendUpdate = function() {
 
 Cell.prototype.onConsume = function(consumer, gameServer) {
     // Called when the cell is consumed
+    consumer.addMass(this.mass);
 };
 
 Cell.prototype.onAdd = function(gameServer) {
     // Called when this cell is added to the world
 };
 
-Cell.prototype.onRemove = function(gameServer) {
+Cell.prototype.onRemove = function() {
     // Called when this cell is removed
 };
 
-Cell.prototype.onAutoMove = function(gameServer) {
+Cell.prototype.eat = function() {
+    // Calld on tick for eating
+};
+
+Cell.prototype.move = function(gameServer) {
     // Called on each auto move engine tick
-};
-
-Cell.prototype.moveDone = function(gameServer) {
-    // Called when this cell finished moving with the auto move engine
-};
-
-// Lib
-
-Cell.prototype.abs = function(x) {
-    return x < 0 ? -x : x;
-};
-
-Cell.prototype.getDist = function(x1, y1, x2, y2) {
-    var xs = x2 - x1;
-    xs = xs * xs;
-
-    var ys = y2 - y1;
-    ys = ys * ys;
-
-    return Math.sqrt(xs + ys);
 };

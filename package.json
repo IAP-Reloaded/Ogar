@@ -4,8 +4,7 @@
   "description": "Open source Agar.io server",
   "main": "src/index.js",
   "dependencies": {
-    "ws": "latest",
-    "vector2-node": "latest"
+    "ws": "latest"
   },
   "devDependencies": {},
   "scripts": {
